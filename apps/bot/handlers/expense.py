@@ -1,6 +1,6 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes
-from financial_bot.apps.bot.models import TelegramUser, ExpenseRequest  # Исправлен импорт
+from bot.models import TelegramUser, ExpenseRequest  # Исправлен импорт
 import os
 from django.conf import settings
 import logging
