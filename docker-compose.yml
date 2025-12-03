@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: financial_bot_django
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - media_volume:/app/media
+      - static_volume:/app/staticfiles
+    env_file:
+      - .env
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - DATABASE_URL=sqlite:///db.sqlite3
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  bot:
+    build: .
+    container_name: financial_bot_telegram
+    depends_on:
+      - web
+    volumes:
+      - .:/app
+      - media_volume:/app/media
+    env_file:
+      - .env
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - DATABASE_URL=sqlite:///db.sqlite3
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runbot"
+
+volumes:
+  media_volume:
+  static_volume:

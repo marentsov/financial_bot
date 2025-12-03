@@ -1,10 +1,13 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes
-from financial_bot.apps.bot.models import TelegramUser, ExpenseRequest
+from financial_bot.apps.bot.models import TelegramUser, ExpenseRequest  # Исправлен импорт
 import os
 from django.conf import settings
+import logging
 
-from financial_bot.apps.bot.handlers.start import START_MENU
+logger = logging.getLogger(__name__)
+
+from .start import START_MENU
 
 # Состояния для ConversationHandler
 AMOUNT, JUSTIFICATION, RECEIPT = range(1, 4)
@@ -13,7 +16,7 @@ AMOUNT, JUSTIFICATION, RECEIPT = range(1, 4)
 async def new_expense_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало создания новой заявки"""
     await update.message.reply_text(
-        "📤 <b>Новая заявка на возмещение</b>\n\n"
+        "<b>Новая заявка на возмещение</b>\n\n"
         "Шаг 1 из 3\n"
         "Введите сумму расхода в рублях:",
         parse_mode='HTML'
@@ -99,8 +102,8 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f" Сумма: {expense.amount} руб.\n"
             f" Обоснование: {expense.justification}\n"
             f" Дата: {expense.created_at.strftime('%d.%m.%Y %H:%M')}\n\n"
-            f" Статус:  Новая\n\n"
-            f" Финансист рассмотрит вашу заявку в ближайшее время."
+            f"Статус:  Новая\n\n"
+            f"Финансист рассмотрит вашу заявку в ближайшее время."
         )
 
         await update.message.reply_text(
@@ -109,13 +112,12 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки']], resize_keyboard=True)
         )
 
-        # Уведомление для админа (опционально)
-        # await notify_admin(expense)
+        logger.info(f"Создана новая заявка #{expense.id} от пользователя {user.id}")
 
     except Exception as e:
         logger.error(f"Error creating expense: {e}")
         await update.message.reply_text(
-            "Произошла ошибка при создании заявки. Попробуйте еще раз.",
+            " Произошла ошибка при создании заявки. Попробуйте еще раз.",
             reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки']], resize_keyboard=True)
         )
 

@@ -1,18 +1,17 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes
-from apps.core.models import TelegramUser, ExpenseRequest
+from financial_bot.apps.bot.models import TelegramUser, ExpenseRequest
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Состояния
+
 START_MENU = 0
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
     user = update.effective_user
-    chat_id = update.effective_chat.id
 
     # Сохраняем/обновляем пользователя
     tg_user, created = TelegramUser.objects.get_or_create(
@@ -29,7 +28,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         tg_user.save()
 
     # Главное меню
-    keyboard = [['📤 Новая заявка', '📋 Мои заявки']]
+    keyboard = [['Новая заявка', 'Мои заявки']]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
     welcome_text = (
@@ -59,15 +58,14 @@ async def my_requests(update: Update, context: ContextTypes.DEFAULT_TYPE):
             status_emoji = {
                 'new': '🆕',
                 'approved': '✅',
-                'rejected': '❌',
-                'closed': '🔒'
+                'rejected': '❌'
             }.get(req.status, '📄')
 
             response += (
                 f"{status_emoji} Заявка #{req.id}\n"
-                f"💰 Сумма: {req.amount} руб.\n"
-                f"📝 Статус: {req.get_status_display()}\n"
-                f"📅 Дата: {req.created_at.strftime('%d.%m.%Y %H:%M')}\n"
+                f"Сумма: {req.amount} руб.\n"
+                f"Статус: {req.get_status_display()}\n"
+                f"Дата: {req.created_at.strftime('%d.%m.%Y %H:%M')}\n"
                 f"{'-' * 30}\n"
             )
 
@@ -81,19 +79,18 @@ async def my_requests(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /help"""
     help_text = (
-        "📋 <b>Доступные команды:</b>\n\n"
+        "<b>Доступные команды:</b>\n\n"
         "/start - Главное меню\n"
         "/help - Эта справка\n\n"
         "<b>Как подать заявку:</b>\n"
-        "1. Нажмите '📤 Новая заявка'\n"
+        "1. Нажмите 'Новая заявка'\n"
         "2. Укажите сумму\n"
         "3. Напишите обоснование\n"
         "4. Прикрепите фото чека\n\n"
         "Статусы заявок:\n"
-        "🆕 Новая - на рассмотрении\n"
-        "✅ Одобрена - одобрена финансистом\n"
-        "❌ Отклонена - отклонена с комментарием\n"
-        "🔒 Закрыта - выплачена"
+        "Новая - на рассмотрении\n"
+        "Одобрена - одобрена финансистом\n"
+        "Отклонена - отклонена с комментарием"
     )
     await update.message.reply_text(help_text, parse_mode='HTML')
     return START_MENU
@@ -103,6 +100,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена текущего действия"""
     await update.message.reply_text(
         "Действие отменено.",
-        reply_markup=ReplyKeyboardMarkup([['📤 Новая заявка', '📋 Мои заявки']], resize_keyboard=True)
+        reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки']], resize_keyboard=True)
     )
     return START_MENU
