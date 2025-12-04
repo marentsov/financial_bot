@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class TelegramUser(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
     username = models.CharField(max_length=255, blank=True, null=True, verbose_name="Имя пользователя")
@@ -17,6 +18,7 @@ class TelegramUser(models.Model):
             return f"{self.full_name} (@{self.username})" if self.username else self.full_name
         return f"ID: {self.telegram_id}"
 
+
 class ExpenseRequest(models.Model):
     STATUS_CHOICES = [
         ('new', 'Новая'),
@@ -27,7 +29,10 @@ class ExpenseRequest(models.Model):
     user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, verbose_name="Пользователь")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма")
     justification = models.TextField(verbose_name="Обоснование")
-    receipt_photo = models.ImageField(upload_to='receipts/', verbose_name="Фото чека")
+    receipt_photo = models.BinaryField(verbose_name="Фото чека")
+    receipt_photo_name = models.CharField(max_length=255, verbose_name="Имя файла")
+    receipt_photo_content_type = models.CharField(max_length=100, default='image/jpeg', verbose_name="Тип файла")
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")

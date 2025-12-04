@@ -20,8 +20,8 @@ class ExpenseBot:
             entry_points=[CommandHandler('start', start.start_command)],
             states={
                 start.START_MENU: [
-                    MessageHandler(filters.Regex('^(📤 Новая заявка)$'), expense.new_expense_start),
-                    MessageHandler(filters.Regex('^(📋 Мои заявки)$'), start.my_requests),
+                    MessageHandler(filters.Regex('^(Новая заявка)$'), expense.new_expense_start),
+                    MessageHandler(filters.Regex('^(Мои заявки)$'), start.my_requests),
                 ],
                 expense.AMOUNT: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, expense.get_amount),
@@ -39,7 +39,15 @@ class ExpenseBot:
         self.application.add_handler(conv_handler)
         self.application.add_handler(CommandHandler("help", start.help_command))
 
+        # Обработчик ошибок
+        self.application.add_error_handler(self.error_handler)
+
         print("Бот инициализирован!")
+
+    async def error_handler(self, update: object, context):
+        """Обработчик ошибок"""
+        logger = context.bot.logger
+        logger.error(f"Exception while handling an update: {context.error}")
 
     def run(self):
         """Запуск бота"""

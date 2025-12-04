@@ -1,42 +1,64 @@
 version: '3.8'
 
 services:
-  web:
+  # ВСЁ в одном сервисе: Django + Бот + PostgreSQL
+  app:
     build: .
-    container_name: financial_bot_django
+    container_name: financial_bot
+    volumes:
+      - .:/app
     ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-      - media_volume:/app/media
-      - static_volume:/app/staticfiles
-    env_file:
-      - .env
+      - "8000:8000"      # Django админка
     environment:
-      - DEBUG=${DEBUG:-False}
-      - DATABASE_URL=sqlite:///db.sqlite3
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
-
-  bot:
-    build: .
-    container_name: financial_bot_telegram
+      - DATABASE_URL=postgresql://bot_user:bot_password@db:5432/financial_bot
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1
     depends_on:
-      - web
-    volumes:
-      - .:/app
-      - media_volume:/app/media
-    env_file:
-      - .env
-    environment:
-      - DEBUG=${DEBUG:-False}
-      - DATABASE_URL=sqlite:///db.sqlite3
+      db:
+        condition: service_healthy
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runbot"
+      sh -c "
+        # Ждем готовности БД
+        until pg_isready -h db -U bot_user -d financial_bot; do
+          echo 'Ждем PostgreSQL...'
+          sleep 2
+        done
+        
+        # Запускаем всё в фоне
+        echo '🚀 Запускаем всё...'
+        
+        # 1. Миграции
+        python manage.py migrate
+        
+        # 2. Django сервер в фоне
+        python manage.py runserver 0.0.0.0:8000 &
+        
+        # 3. Ждем немного
+        sleep 3
+        
+        # 4. Запускаем бота
+        python manage.py runbot
+      "
+
+  # Только PostgreSQL база
+  db:
+    image: postgres:15-alpine
+    container_name: financial_bot_db
+    environment:
+      POSTGRES_DB: financial_bot
+      POSTGRES_USER: bot_user
+      POSTGRES_PASSWORD: bot_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Чтобы подключиться локально если нужно
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot_user -d financial_bot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  media_volume:
-  static_volume:
+  postgres_data:

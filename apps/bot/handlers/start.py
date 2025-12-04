@@ -2,6 +2,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes
 from bot.models import TelegramUser, ExpenseRequest
 import logging
+from asgiref.sync import sync_to_async  # Добавить эту строку
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     # Сохраняем/обновляем пользователя
-    tg_user, created = TelegramUser.objects.get_or_create(
+    tg_user, created = await sync_to_async(TelegramUser.objects.get_or_create)(
         telegram_id=user.id,
         defaults={
             'username': user.username,
@@ -25,7 +26,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not created:
         tg_user.username = user.username
         tg_user.full_name = f"{user.first_name} {user.last_name or ''}".strip()
-        tg_user.save()
+        await sync_to_async(tg_user.save)()
 
     # Главное меню
     keyboard = [['Новая заявка', 'Мои заявки']]
@@ -46,8 +47,10 @@ async def my_requests(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
     try:
-        tg_user = TelegramUser.objects.get(telegram_id=user.id)
-        requests = ExpenseRequest.objects.filter(user=tg_user).order_by('-created_at')[:5]
+        tg_user = await sync_to_async(TelegramUser.objects.get)(telegram_id=user.id)
+        requests = await sync_to_async(list)(
+            ExpenseRequest.objects.filter(user=tg_user).order_by('-created_at')[:5]
+        )
 
         if not requests:
             await update.message.reply_text("У вас пока нет заявок.")

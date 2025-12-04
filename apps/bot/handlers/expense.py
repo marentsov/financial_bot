@@ -1,9 +1,8 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes
-from bot.models import TelegramUser, ExpenseRequest  # Исправлен импорт
-import os
-from django.conf import settings
+from bot.models import TelegramUser, ExpenseRequest
 import logging
+from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -70,26 +69,27 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Получаем фото
         photo_file = await update.message.photo[-1].get_file()
 
-        # Создаем директорию для чеков
-        receipts_dir = os.path.join(settings.MEDIA_ROOT, 'receipts')
-        os.makedirs(receipts_dir, exist_ok=True)
+        # Скачиваем фото в память (не на диск!)
+        photo_bytes = await photo_file.download_as_bytearray()
+
+        # Определяем тип файла
+        file_extension = photo_file.file_path.split('.')[-1].lower() if photo_file.file_path else 'jpg'
+        content_type = f'image/{file_extension}' if file_extension in ['jpg', 'jpeg', 'png', 'gif'] else 'image/jpeg'
 
         # Генерируем имя файла
-        file_name = f"receipt_{user.id}_{update.message.date.strftime('%Y%m%d_%H%M%S')}.jpg"
-        file_path = os.path.join(receipts_dir, file_name)
-
-        # Скачиваем файл
-        await photo_file.download_to_drive(file_path)
+        file_name = f"receipt_{user.id}_{update.message.date.strftime('%Y%m%d_%H%M%S')}.{file_extension}"
 
         # Получаем пользователя
-        tg_user = TelegramUser.objects.get(telegram_id=user.id)
+        tg_user = await sync_to_async(TelegramUser.objects.get)(telegram_id=user.id)
 
-        # Создаем заявку
-        expense = ExpenseRequest.objects.create(
+        # Создаем заявку с фото в БД
+        expense = await sync_to_async(ExpenseRequest.objects.create)(
             user=tg_user,
             amount=context.user_data['amount'],
             justification=context.user_data['justification'],
-            receipt_photo=f'receipts/{file_name}',
+            receipt_photo=bytes(photo_bytes),  # Сохраняем как bytes
+            receipt_photo_name=file_name,
+            receipt_photo_content_type=content_type,
             status='new'
         )
 
