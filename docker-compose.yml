@@ -27,7 +27,7 @@ services:
         done
         
         # Запускаем всё в фоне
-        echo '🚀 Запускаем всё...'
+        echo 'Запуск'
         
         # 1. Миграции
         python manage.py migrate
@@ -53,7 +53,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # Чтобы подключиться локально если нужно
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U bot_user -d financial_bot"]
       interval: 5s

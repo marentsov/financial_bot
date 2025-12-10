@@ -69,7 +69,7 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Получаем фото
         photo_file = await update.message.photo[-1].get_file()
 
-        # Скачиваем фото в память (не на диск!)
+        # Скачиваем фото в память
         photo_bytes = await photo_file.download_as_bytearray()
 
         # Определяем тип файла
