@@ -3,7 +3,7 @@ import asyncio
 from django.conf import settings
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
-from .handlers import start, expense
+from .handlers import start, expense, money
 
 
 class ExpenseBot:
@@ -22,6 +22,8 @@ class ExpenseBot:
                 start.START_MENU: [
                     MessageHandler(filters.Regex('^(Новая заявка)$'), expense.new_expense_start),
                     MessageHandler(filters.Regex('^(Мои заявки)$'), start.my_requests),
+                    MessageHandler(filters.Regex('^(Новый запрос)$'), money.new_request_start),
+                    MessageHandler(filters.Regex('^(Мои запросы)$'), start.my_money_requests),
                 ],
                 expense.AMOUNT: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, expense.get_amount),
@@ -32,6 +34,13 @@ class ExpenseBot:
                 expense.RECEIPT: [
                     MessageHandler(filters.PHOTO, expense.get_receipt),
                 ],
+                money.AMOUNT: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, money.get_amount),
+                ],
+                money.JUSTIFICATION: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, money.get_justification),
+                ],
+
             },
             fallbacks=[CommandHandler('cancel', start.cancel)],
         )

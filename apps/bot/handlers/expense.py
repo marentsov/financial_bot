@@ -109,7 +109,7 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             success_text,
             parse_mode='HTML',
-            reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки']], resize_keyboard=True)
+            reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки', 'Новый запрос', 'Мои запросы']], resize_keyboard=True)
         )
 
         logger.info(f"Создана новая заявка #{expense.id} от пользователя {user.id}")
@@ -118,7 +118,7 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Error creating expense: {e}")
         await update.message.reply_text(
             " Произошла ошибка при создании заявки. Попробуйте еще раз.",
-            reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки']], resize_keyboard=True)
+            reply_markup=ReplyKeyboardMarkup([['Новая заявка', 'Мои заявки', 'Новый запрос', 'Мои запросы']], resize_keyboard=True)
         )
 
     return START_MENU
