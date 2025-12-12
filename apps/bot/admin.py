@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.http import HttpResponse
 import base64
-from .models import TelegramUser, ExpenseRequest
+from .models import TelegramUser, ExpenseRequest, MoneyRequest
 
 
 @admin.register(TelegramUser)
@@ -172,3 +172,37 @@ class ExpenseRequestAdmin(admin.ModelAdmin):
         self.message_user(request, f"{queryset.count()} заявок отклонено.")
 
     reject_requests.short_description = "Отклонить выбранные заявки"
+
+
+@admin.register(MoneyRequest)
+class MoneyRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'amount', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__telegram_id', 'user__full_name', 'justification')
+    readonly_fields = ('created_at', 'updated_at')
+    actions = ['approve_requests', 'reject_requests']
+
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'status', 'admin_comment')
+        }),
+        ('Детали запроса', {
+            'fields': ('amount', 'justification')
+        }),
+        ('Даты', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+
+
+    def approve_money_requests(self, request, queryset):
+        queryset.update(status='approved')
+        self.message_user(request, f"{queryset.count()} запросов одобрено.")
+
+    approve_money_requests.short_description = "Одобрить выбранные запросы"
+
+    def reject_money_requests(self, request, queryset):
+        queryset.update(status='rejected')
+        self.message_user(request, f"{queryset.count()} запросов отклонено.")
+
+    reject_money_requests.short_description = "Отклонить выбранные запросы"

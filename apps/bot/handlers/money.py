@@ -60,7 +60,7 @@ async def get_justification(update: Update, context: ContextTypes.DEFAULT_TYPE):
         request = await sync_to_async(MoneyRequest.objects.create)(
             user=tg_user,
             amount=context.user_data['amount'],
-            justification=context.user_data['justification'],
+            justification=justification,
             status='new'
         )
 
